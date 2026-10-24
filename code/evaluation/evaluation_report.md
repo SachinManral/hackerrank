@@ -11,10 +11,10 @@ python code/evaluation/main.py
 | Metric | Result |
 | --- | ---: |
 | Deletion-status accuracy | 32/32 (100.0%) |
-| Exact step-sequence accuracy | 9/32 (28.1%) |
-| Step precision | 154/168 (91.7%) |
-| Step recall | 154/193 (79.8%) |
-| Step F1 | 85.3% |
+| Exact step-sequence accuracy | 10/32 (31.2%) |
+| Step precision | 157/168 (93.5%) |
+| Step recall | 157/193 (81.3%) |
+| Step F1 | 87.0% |
 
 The benchmark also includes four independent fixtures. All four passed:
 
@@ -35,6 +35,8 @@ The full run processed all 518 requests and produced 518 sorted output rows. The
 - Normalized support and analytics service aliases in structured logs.
 - Corrected log-state interpretation for active restore candidates, redacted support records, and anonymized analytics profiles.
 - Used evidence-declared categories and structured event semantics when choosing deletion versus redaction or anonymization.
+- Classified support attachments from participant-visible document origins and recognized audit records by their integrity metadata even when stored in an account-service snapshot.
+- Ignored shared visual evidence when it contained identifiers for unrelated subjects, preventing cross-user connector false positives.
 - Added temporal workflow-resource fallback for account records absent from the latest account snapshot.
 - Expanded deletion intent detection to include deletion-audit wording while retaining explicit non-deletion safeguards.
 

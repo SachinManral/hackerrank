@@ -84,6 +84,15 @@ class PolicyEngine:
             return "SUPPORT_ATTACHMENT"
         if declared == "SUPPORT_MESSAGE":
             return "SUPPORT_MESSAGE"
+        evidence_path = str(details.get("_evidence_path", "")).lower()
+        if (
+            system_id.lower() == "support_platform"
+            and evidence_path.endswith((".pdf", ".png", ".jpg", ".jpeg"))
+        ):
+            return "SUPPORT_ATTACHMENT"
+        event_name = str(details.get("event_name", "")).lower()
+        if "audit" in event_name or "integrity_seal" in details:
+            return "SECURITY_AUDIT_LOG"
         event = str(details.get("event", "")).lower()
         if (
             system_id == "analytics_platform"

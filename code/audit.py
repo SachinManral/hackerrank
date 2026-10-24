@@ -225,6 +225,35 @@ class AuditEngine:
                 )
             )
 
+    def _is_shared_visual_observation(
+        self, observation: EvidenceObservation, bundle: IdentityBundle
+    ) -> bool:
+        """Exclude OCR records that visibly combine unrelated subjects."""
+        manifest = next(
+            (m for m in self.catalog.manifest if m.get("file_id") == observation.file_id),
+            {},
+        )
+        path = manifest.get("file_path", "").lower()
+        if not path.endswith((".png", ".jpg", ".jpeg")):
+            return False
+        subject_emails = {email.lower() for email in bundle.emails}
+        observed_emails = {
+            identifier.lower()
+            for identifier in observation.identifiers
+            if "@" in identifier
+        }
+        return bool(observed_emails - subject_emails)
+
+    def _observation_details(self, observation: EvidenceObservation) -> Dict[str, Any]:
+        details = dict(observation.details)
+        manifest = next(
+            (m for m in self.catalog.manifest if m.get("file_id") == observation.file_id),
+            {},
+        )
+        details["_evidence_path"] = manifest.get("file_path", "")
+        details["_evidence_origin"] = manifest.get("origin", "")
+        return details
+
     def audit_case(self, case: Dict[str, Any]) -> Tuple[str, List[Dict[str, Any]]]:
         """Audit a single deletion request case."""
         case_id = case.get("case_id", "")
@@ -245,6 +274,11 @@ class AuditEngine:
 
         # Step 3: Discover all linked evidence observations up to audit_at
         user_observations = self.catalog.find_by_identifiers(search_keys, audit_at=audit_at)
+        user_observations = [
+            observation
+            for observation in user_observations
+            if not self._is_shared_visual_observation(observation, bundle)
+        ]
 
         workflow_resources = self._workflow_resource_candidates(rep_at, audit_at)
         nearest_account = next(
@@ -279,7 +313,7 @@ class AuditEngine:
                 latest.system_id,
                 latest.state,
                 latest.file_id,
-                latest.details,
+                self._observation_details(latest),
             )
 
         # Step 4: Evaluate policy and check for violations or risks
