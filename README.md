@@ -29,8 +29,8 @@ The source code and this README are bundled together in `code.zip`. Do not bundl
 Clone the repository and move into the project directory:
 
 ```bash
-git clone https://github.com/interviewstreet/hackerrank-orchestrate-october26.git
-cd hackerrank-orchestrate-october26
+git clone https://github.com/SachinManral/hackerrank.git
+cd hackerrank
 ```
 
 Start your AI coding tool from the **repository root** so it automatically reads [`AGENTS.md`](./AGENTS.md) and logs your session turns to `log.txt` in the root directory.
