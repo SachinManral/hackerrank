@@ -17,14 +17,24 @@ Read [`problem_statement.md`](./problem_statement.md) for the complete challenge
 The submission must include both of the following:
 
 - **Source code** — the complete working project in `code/`, including the runnable entry point, evidence ingestion, identity resolution, policy evaluation, validation, and evaluation code.
-- **README** — this file, with setup instructions, the execution command, output requirements, and an overview of the audit approach.
+- **README** — this file, with setup instructions and an approach overview, plus the execution command and output requirements.
 
 The source code and this README are bundled together in `code.zip`. Do not bundle
 `dataset/`, virtual environments, caches, credentials, or nested archives.
 
 ---
 
-## Quick Start
+## Setup Instructions
+
+### Prerequisites
+
+- Python 3.10 or newer
+- A terminal opened at the repository root
+- The participant-facing `dataset/` directory supplied with the challenge
+
+No Gemini, Groq, or other API key is required for the deterministic implementation.
+
+### Install and Run
 
 Clone the repository and move into the project directory:
 
@@ -47,6 +57,12 @@ Run the starter Python entry point with:
 
 ```bash
 python3 code/main.py
+```
+
+On Windows PowerShell, the equivalent command is:
+
+```powershell
+python code\main.py
 ```
 
 The blank template at `dataset/output.csv` is provided as a reference. Your final generated file for submission must be the root-level `output.csv`.
