@@ -39,6 +39,11 @@ python3 code/main.py
 
 The blank template at `dataset/output.csv` is provided as a reference. Your final generated file for submission must be the root-level `output.csv`.
 
+The implementation is intentionally deterministic and does not require Gemini,
+Groq, or any other remote model call. This keeps predictions reproducible,
+avoids sending participant data or credentials to third parties, and produces
+the required token/cost report without external dependencies.
+
 
 ## Dataset
 
@@ -155,3 +160,5 @@ Before submitting, confirm that:
 - `code.zip` includes your runnable code, `README.md`, `code/evaluation/evaluation_report.md`, and `code/evaluation/usage_report.md`;
 - `log.txt` follows the `AGENTS.md` turn format and is uploaded to the `chat_transcript` slot; and
 - no API keys, credentials, real personal data, or sensitive configuration values are included.
+
+# hackerrank
