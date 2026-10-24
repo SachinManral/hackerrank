@@ -12,6 +12,18 @@ Read [`problem_statement.md`](./problem_statement.md) for the complete challenge
 
 ---
 
+## What to Include
+
+The submission must include both of the following:
+
+- **Source code** — the complete working project in `code/`, including the runnable entry point, evidence ingestion, identity resolution, policy evaluation, validation, and evaluation code.
+- **README** — this file, with setup instructions, the execution command, output requirements, and an overview of the audit approach.
+
+The source code and this README are bundled together in `code.zip`. Do not bundle
+`dataset/`, virtual environments, caches, credentials, or nested archives.
+
+---
+
 ## Quick Start
 
 Clone the repository and move into the project directory:
@@ -43,6 +55,34 @@ The implementation is intentionally deterministic and does not require Gemini,
 Groq, or any other remote model call. This keeps predictions reproducible,
 avoids sending participant data or credentials to third parties, and produces
 the required token/cost report without external dependencies.
+
+## Approach Overview
+
+The pipeline in `code/` follows an evidence-first audit workflow:
+
+1. **Load participant-facing evidence** — parse the CSV manifest and supported
+   JSON, SQL, log, text, PDF, and image evidence into normalized observations.
+2. **Resolve identity history** — combine the current identity snapshot with
+   `user_audit_log.csv` to recover current and historical emails, phone numbers,
+   email hashes, names, and the stable `user_id`.
+3. **Apply the audit-time cutoff** — ignore evidence captured after each case's
+   `audit_at`, and reconstruct the latest supported state for every linked
+   resource.
+4. **Evaluate policy** — apply `deletion_rules.csv` to profiles, indexes,
+   exports, support records, analytics, telemetry, audit records, legal holds,
+   backups, data flows, and account tombstones.
+5. **Detect resurrection risks** — identify active synchronization or restore
+   paths that can recreate prohibited data before dependent records are changed.
+6. **Plan ordered steps** — emit evidence-backed findings, ordered remediation
+   operations, and the required verification checks using only the operations
+   and states allowed by the challenge contract.
+7. **Validate the submission** — verify the exact header, 518 sorted cases,
+   JSON structure, permitted enums, evidence references, phase ordering, and
+   consecutive step numbers before writing `output.csv`.
+
+The implementation is deterministic and evidence-grounded. Workflow statuses
+and activity results are treated as claims unless participant-visible evidence
+establishes the resulting state.
 
 
 ## Dataset

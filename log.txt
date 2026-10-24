@@ -395,3 +395,28 @@ branch=main
 repo_root=D:\Study Material\VS Studio\hackerrank_challenge
 worktree=main
 parent_agent=none
+## [2026-10-24T23:37:15+05:30] Updated README submission guidance
+
+User Prompt (verbatim, secrets redacted):
+update the readme accordind to the #### What to include
+
+These are the required items:
+- Source code — complete working project
+- README — setup instructions and approach overview
+
+Agent Response Summary:
+Updated README.md with an explicit What to Include section identifying the complete source code and README deliverables. Added a concise evidence-first approach overview covering ingestion, historical identity resolution, audit-time filtering, policy evaluation, resurrection-risk detection, ordered step planning, and strict output validation.
+
+Actions:
+* Edited README.md
+* Added source-code and README submission requirements
+* Added setup/output/architecture approach details
+* Ran git diff --check and verified the new sections are present
+
+Context:
+tool=github_copilot_vscode_agent
+model=gpt-5.6-luna
+branch=main
+repo_root=D:\Study Material\VS Studio\hackerrank_challenge
+worktree=main
+parent_agent=none
