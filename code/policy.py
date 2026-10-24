@@ -75,11 +75,29 @@ class PolicyEngine:
 
         return "USER_PROFILE"
 
+    def infer_category_with_details(
+        self, system_id: str, resource_id: str, details: Optional[Dict] = None
+    ) -> str:
+        details = details or {}
+        declared = str(details.get("category", "")).upper()
+        if declared == "SUPPORT_ATTACHMENT":
+            return "SUPPORT_ATTACHMENT"
+        if declared == "SUPPORT_MESSAGE":
+            return "SUPPORT_MESSAGE"
+        event = str(details.get("event", "")).lower()
+        if (
+            system_id == "analytics_platform"
+            and event == "contact_lookup_completed"
+        ):
+            return "USER_PROFILE"
+        return self.infer_category(system_id, resource_id)
+
     def get_finding_op_and_state(
-        self, system_id: str, resource_id: str, observed_state: str
+        self, system_id: str, resource_id: str, observed_state: str,
+        details: Optional[Dict] = None
     ) -> Optional[Tuple[str, str]]:
         """Return (operation, state) if observed_state represents a violation/risk, else None."""
-        cat = self.infer_category(system_id, resource_id)
+        cat = self.infer_category_with_details(system_id, resource_id, details)
 
         if cat == "DATA_FLOW":
             if observed_state == "ACTIVE":
@@ -107,7 +125,8 @@ class PolicyEngine:
         return None
 
     def get_remediation_op_and_state(
-        self, system_id: str, resource_id: str, finding_op: str
+        self, system_id: str, resource_id: str, finding_op: str,
+        details: Optional[Dict] = None
     ) -> Tuple[str, str]:
         """Return (operation, state) for the required remediation."""
         if finding_op == "REPORT_ACTIVE_DATA_FLOW":
@@ -115,7 +134,7 @@ class PolicyEngine:
         if finding_op == "REPORT_RESTORE_RISK":
             return ("BLOCK_RESTORE", "BLOCKED")
 
-        cat = self.infer_category(system_id, resource_id)
+        cat = self.infer_category_with_details(system_id, resource_id, details)
         if cat in ("ANALYTICS_PROFILE", "PRODUCT_TELEMETRY"):
             return ("ANONYMIZE_RECORD", "ANONYMIZED")
         if cat in ("SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE", "EMAIL_DELIVERY_LOG"):
@@ -124,10 +143,11 @@ class PolicyEngine:
         return ("DELETE_RECORD", "ABSENT")
 
     def get_target_verification_op_and_state(
-        self, system_id: str, resource_id: str
+        self, system_id: str, resource_id: str,
+        details: Optional[Dict] = None
     ) -> Tuple[str, str]:
         """Return (operation, state) for the compliant verified state."""
-        cat = self.infer_category(system_id, resource_id)
+        cat = self.infer_category_with_details(system_id, resource_id, details)
 
         if cat == "DATA_FLOW":
             return ("VERIFY_DATA_FLOW_DISABLED", "DISABLED")

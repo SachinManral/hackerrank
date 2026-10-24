@@ -266,7 +266,7 @@ class AuditEngine:
 
         # Reconstruct resource state at audit_at
         # For each resource, find latest evidence captured on or before audit_at
-        res_latest: Dict[str, Tuple[str, str, str]] = {}  # rid -> (sys_id, state, evidence_id)
+        res_latest: Dict[str, Tuple[str, str, str, Dict[str, Any]]] = {}
 
         for rid, obs_list in res_to_obs.items():
             # Sort by captured_at ascending
@@ -275,12 +275,19 @@ class AuditEngine:
                 key=lambda o: o.captured_at or datetime.min.replace(tzinfo=timezone.utc),
             )
             latest = obs_sorted[-1]
-            res_latest[rid] = (latest.system_id, latest.state, latest.file_id)
+            res_latest[rid] = (
+                latest.system_id,
+                latest.state,
+                latest.file_id,
+                latest.details,
+            )
 
         # Step 4: Evaluate policy and check for violations or risks
         findings = []
-        for rid, (sys_id, state, fid) in res_latest.items():
-            violation = self.policy.get_finding_op_and_state(sys_id, rid, state)
+        for rid, (sys_id, state, fid, details) in res_latest.items():
+            violation = self.policy.get_finding_op_and_state(
+                sys_id, rid, state, details
+            )
             if violation:
                 v_op, v_st = violation
                 findings.append(
@@ -300,7 +307,17 @@ class AuditEngine:
             remediations = []
             for f in findings:
                 r_op, r_st = self.policy.get_remediation_op_and_state(
-                    f["system_id"], f["resource_id"], f["operation"]
+                    f["system_id"],
+                    f["resource_id"],
+                    f["operation"],
+                    next(
+                        (
+                            details
+                            for rid, (_, _, _, details) in res_latest.items()
+                            if rid == f["resource_id"]
+                        ),
+                        None,
+                    ),
                 )
                 remediations.append(
                     {
@@ -315,8 +332,10 @@ class AuditEngine:
 
             # Build future verification steps covering all subject resources
             verifications = []
-            for rid, (sys_id, state, fid) in res_latest.items():
-                v_op, v_st = self.policy.get_target_verification_op_and_state(sys_id, rid)
+            for rid, (sys_id, state, fid, details) in res_latest.items():
+                v_op, v_st = self.policy.get_target_verification_op_and_state(
+                    sys_id, rid, details
+                )
                 verifications.append(
                     {
                         "phase": "VERIFICATION",
@@ -333,8 +352,10 @@ class AuditEngine:
             status = "COMPLETE"
             # Build evidence-backed verification steps only
             verifications = []
-            for rid, (sys_id, state, fid) in res_latest.items():
-                v_op, v_st = self.policy.get_target_verification_op_and_state(sys_id, rid)
+            for rid, (sys_id, state, fid, details) in res_latest.items():
+                v_op, v_st = self.policy.get_target_verification_op_and_state(
+                    sys_id, rid, details
+                )
                 verifications.append(
                     {
                         "phase": "VERIFICATION",

@@ -36,7 +36,7 @@ except ImportError:
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATASET_DIR = os.path.join(ROOT_DIR, "dataset")
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evidence_cache.pkl")
-CACHE_VERSION = 4
+CACHE_VERSION = 5
 
 
 def parse_iso(ts: Optional[str]) -> Optional[datetime]:
@@ -656,10 +656,17 @@ def _parse_log(fpath: str, fid: str, cap_at: Optional[datetime], catalog: Eviden
             rest = line
 
         parts = {}
-        for km in re.finditer(r'(\w+)=(?:"([^"]*?)"|(\S+))', rest):
-            k = km.group(1)
-            v = km.group(2) if km.group(2) is not None else km.group(3)
-            parts[k] = v
+        try:
+            json_parts = json.loads(rest)
+            if isinstance(json_parts, dict):
+                parts.update(json_parts)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        if not parts:
+            for km in re.finditer(r'(\w+)=(?:"([^"]*?)"|(\S+))', rest):
+                k = km.group(1)
+                v = km.group(2) if km.group(2) is not None else km.group(3)
+                parts[k] = v
 
         trace_id = parts.get("trace_id")
         ids = set()

@@ -24,4 +24,3 @@ python code/main.py
 ```
 
 The run reads only participant-facing files under `dataset/`, writes `output.csv` at the repository root, and validates the output before completing.
-
