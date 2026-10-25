@@ -254,6 +254,38 @@ class AuditEngine:
         details["_evidence_origin"] = manifest.get("origin", "")
         return details
 
+    def _subject_observations(
+        self,
+        search_keys: Set[str],
+        audit_at: Optional[datetime],
+        bundle: IdentityBundle,
+    ) -> List[EvidenceObservation]:
+        """Keep resource snapshots only when a non-shared observation links them."""
+        candidates = self.catalog.find_by_identifiers(search_keys, audit_at=audit_at)
+        linked_resources = {
+            observation.resource_id
+            for observation in candidates
+            if observation.identifiers.intersection(search_keys)
+            and not self._is_shared_visual_observation(observation, bundle)
+        }
+        return [
+            observation
+            for observation in candidates
+            if observation.resource_id in linked_resources
+            and not self._is_shared_visual_observation(observation, bundle)
+        ]
+
+    @staticmethod
+    def _canonical_system_id(
+        system_id: str, resource_id: str, details: Dict[str, Any]
+    ) -> str:
+        """Use the policy system name when a snapshot stores an audit record elsewhere."""
+        resource = resource_id.lower()
+        event_name = str(details.get("event_name", "")).lower()
+        if "audit" in resource or "integrity_seal" in details or "audit" in event_name:
+            return "security_service"
+        return system_id
+
     def audit_case(self, case: Dict[str, Any]) -> Tuple[str, List[Dict[str, Any]]]:
         """Audit a single deletion request case."""
         case_id = case.get("case_id", "")
@@ -273,12 +305,7 @@ class AuditEngine:
         search_keys.add(req_email)
 
         # Step 3: Discover all linked evidence observations up to audit_at
-        user_observations = self.catalog.find_by_identifiers(search_keys, audit_at=audit_at)
-        user_observations = [
-            observation
-            for observation in user_observations
-            if not self._is_shared_visual_observation(observation, bundle)
-        ]
+        user_observations = self._subject_observations(search_keys, audit_at, bundle)
 
         workflow_resources = self._workflow_resource_candidates(rep_at, audit_at)
         nearest_account = next(
@@ -309,11 +336,12 @@ class AuditEngine:
                 key=lambda o: o.captured_at or datetime.min.replace(tzinfo=timezone.utc),
             )
             latest = obs_sorted[-1]
+            latest_details = self._observation_details(latest)
             res_latest[rid] = (
-                latest.system_id,
+                self._canonical_system_id(latest.system_id, rid, latest_details),
                 latest.state,
                 latest.file_id,
-                self._observation_details(latest),
+                latest_details,
             )
 
         # Step 4: Evaluate policy and check for violations or risks

@@ -33,6 +33,7 @@ from identity import IdentityResolver
 from policy import PolicyEngine
 from audit import AuditEngine
 from validate import validate_output_file
+from ai_review import AIReviewer
 
 
 def run_full_pipeline(input_filename: str = "deletion_requests.csv", output_path: Optional[str] = None) -> str:
@@ -66,6 +67,9 @@ def run_full_pipeline(input_filename: str = "deletion_requests.csv", output_path
 
     # 4. Audit Engine
     engine = AuditEngine(catalog, resolver, policy)
+    reviewer = AIReviewer()
+    if reviewer.enabled:
+        print(f"Optional AI review enabled: {reviewer.provider}")
 
     # 5. Process Requests
     with open(input_path, "r", encoding="utf-8") as f:
@@ -79,6 +83,7 @@ def run_full_pipeline(input_filename: str = "deletion_requests.csv", output_path
     for idx, req in enumerate(requests, start=1):
         cid = req.get("case_id", "")
         status, steps = engine.audit_case(req)
+        status, steps = reviewer.review(req, status, steps, [])
 
         status_counts[status] = status_counts.get(status, 0) + 1
         steps_json = json.dumps(steps, separators=(",", ":"))
@@ -122,6 +127,8 @@ def run_full_pipeline(input_filename: str = "deletion_requests.csv", output_path
     print(f"Status Distribution:   {status_counts}")
     print(f"Output File Location:  {output_path}")
     print(f"Total Execution Time:  {elapsed:.2f} seconds")
+    if reviewer.enabled:
+        print(f"AI review calls:       {reviewer.calls} (fallbacks: {reviewer.failures})")
     print("=" * 80)
 
     return output_path

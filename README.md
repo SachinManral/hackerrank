@@ -32,7 +32,9 @@ The source code and this README are bundled together in `code.zip`. Do not bundl
 - A terminal opened at the repository root
 - The participant-facing `dataset/` directory supplied with the challenge
 
-No Gemini, Groq, or other API key is required for the deterministic implementation.
+No API key is required for the deterministic implementation. Optional provider
+review is supported through environment variables; never place keys in source,
+`.env` files committed to Git, logs, CSV files, or prompts.
 
 ### Install and Run
 
@@ -67,10 +69,24 @@ python code\main.py
 
 The blank template at `dataset/output.csv` is provided as a reference. Your final generated file for submission must be the root-level `output.csv`.
 
-The implementation is intentionally deterministic and does not require Gemini,
-Groq, or any other remote model call. This keeps predictions reproducible,
-avoids sending participant data or credentials to third parties, and produces
-the required token/cost report without external dependencies.
+The implementation is deterministic by default. An optional, schema-validated
+review stage can use Groq or Gemini when explicitly enabled. The local evidence
+engine remains authoritative: the reviewer cannot change the deletion status,
+must return only allowed operations and states, and failed or invalid provider
+responses fall back to the local plan.
+
+To enable Groq on Windows PowerShell:
+
+```powershell
+$env:AUDIT_AI_PROVIDER = "groq"
+$env:GROQ_API_KEY = "<rotated-key-from-your-secret-manager>"
+python code\main.py
+```
+
+Use `gemini` for Gemini, or `both` to try Groq first and Gemini as a fallback.
+The API keys are read only from environment variables and are never printed.
+Because provider review sends redacted request context and generated plans to
+an external service, use it only when your data-handling policy permits it.
 
 ## Approach Overview
 
@@ -99,7 +115,6 @@ The pipeline in `code/` follows an evidence-first audit workflow:
 The implementation is deterministic and evidence-grounded. Workflow statuses
 and activity results are treated as claims unless participant-visible evidence
 establishes the resulting state.
-
 
 ## Dataset
 

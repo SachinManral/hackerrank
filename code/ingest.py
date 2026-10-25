@@ -36,7 +36,7 @@ except ImportError:
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATASET_DIR = os.path.join(ROOT_DIR, "dataset")
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evidence_cache.pkl")
-CACHE_VERSION = 5
+CACHE_VERSION = 7
 
 
 def parse_iso(ts: Optional[str]) -> Optional[datetime]:
@@ -674,6 +674,7 @@ def _parse_log(fpath: str, fid: str, cap_at: Optional[datetime], catalog: Eviden
             "lookup_key",
             "customer_reference",
             "subject_reference",
+            "subject_ref",
             "subject_key",
             "correlation_key",
             "email",
@@ -708,6 +709,7 @@ def _parse_log(fpath: str, fid: str, cap_at: Optional[datetime], catalog: Eviden
                 "lookup_key",
                 "customer_reference",
                 "subject_reference",
+                "subject_ref",
                 "subject_key",
                 "correlation_key",
                 "email",

@@ -122,10 +122,16 @@ class PolicyEngine:
             # Retention is compliant; no violation when PRESENT
             return None
 
-        if cat in ("ANALYTICS_PROFILE", "PRODUCT_TELEMETRY", "SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE"):
+        if cat in ("ANALYTICS_PROFILE", "PRODUCT_TELEMETRY", "ACCOUNT_TOMBSTONE"):
             if observed_state == "PRESENT":
                 return ("REPORT_EXPOSED_PII", "PRESENT")
             return None
+        if cat == "SUPPORT_MESSAGE":
+            if observed_state != "PRESENT":
+                return None
+            if self._support_message_has_exposed_identifier(details):
+                return ("REPORT_EXPOSED_PII", "PRESENT")
+            return ("REPORT_REMAINING_RECORD", "PRESENT")
 
         # Standard deletion target (USER_PROFILE, SEARCH_INDEX_ENTRY, USER_EXPORT, etc.)
         if observed_state == "PRESENT":
@@ -146,7 +152,11 @@ class PolicyEngine:
         cat = self.infer_category_with_details(system_id, resource_id, details)
         if cat in ("ANALYTICS_PROFILE", "PRODUCT_TELEMETRY"):
             return ("ANONYMIZE_RECORD", "ANONYMIZED")
-        if cat in ("SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE", "EMAIL_DELIVERY_LOG"):
+        if cat == "SUPPORT_MESSAGE":
+            if self._support_message_has_exposed_identifier(details):
+                return ("REDACT_RECORD", "REDACTED")
+            return ("DELETE_RECORD", "ABSENT")
+        if cat in ("ACCOUNT_TOMBSTONE", "EMAIL_DELIVERY_LOG"):
             return ("REDACT_RECORD", "REDACTED")
 
         return ("DELETE_RECORD", "ABSENT")
@@ -164,9 +174,25 @@ class PolicyEngine:
             return ("VERIFY_RESTORE_BLOCKED", "BLOCKED")
         if cat in ("SECURITY_AUDIT_LOG", "LEGAL_HOLD_RECORD"):
             return ("VERIFY_RECORD_PRESENT", "PRESENT")
-        if cat in ("SUPPORT_MESSAGE", "ACCOUNT_TOMBSTONE", "EMAIL_DELIVERY_LOG"):
+        if cat == "SUPPORT_MESSAGE":
+            if self._support_message_has_exposed_identifier(details):
+                return ("VERIFY_RECORD_REDACTED", "REDACTED")
+            return ("VERIFY_RECORD_ABSENT", "ABSENT")
+        if cat in ("ACCOUNT_TOMBSTONE", "EMAIL_DELIVERY_LOG"):
             return ("VERIFY_RECORD_REDACTED", "REDACTED")
         if cat in ("ANALYTICS_PROFILE", "PRODUCT_TELEMETRY"):
             return ("VERIFY_RECORD_ANONYMIZED", "ANONYMIZED")
 
         return ("VERIFY_RECORD_ABSENT", "ABSENT")
+
+    @staticmethod
+    def _support_message_has_exposed_identifier(details: Optional[Dict]) -> bool:
+        """Require an explicit message/category signal before redaction."""
+        details = details or {}
+        if str(details.get("category", "")).upper() == "SUPPORT_MESSAGE":
+            return True
+        for key in ("requester_email", "requester_phone", "requester_name", "matched_value", "ident"):
+            value = details.get(key)
+            if value not in (None, "", "null"):
+                return True
+        return False
