@@ -13,6 +13,27 @@ import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
 
+def _load_local_env() -> None:
+    """Load the repository-root .env without overwriting real env values."""
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+    try:
+        with open(env_path, "r", encoding="utf-8") as handle:
+            for raw_line in handle:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                name, value = line.split("=", 1)
+                name = name.strip()
+                value = value.strip().strip("\"'")
+                if name and name not in os.environ:
+                    os.environ[name] = value
+    except OSError:
+        pass
+
+
+_load_local_env()
+
+
 ALLOWED_STATUSES = {"COMPLETE", "INCOMPLETE", "NOT_APPLICABLE"}
 ALLOWED_PHASES = {"FINDING", "REMEDIATION", "VERIFICATION"}
 ALLOWED_OPERATIONS = {

@@ -34,7 +34,11 @@ The source code and this README are bundled together in `code.zip`. Do not bundl
 
 No API key is required for the deterministic implementation. Optional provider
 review is supported through environment variables; never place keys in source,
-`.env` files committed to Git, logs, CSV files, or prompts.
+`.env` files committed to Git, logs, CSV files, or prompts. The provider layer
+uses Groq first for low-latency review and Gemini as a fallback when configured
+with `AUDIT_AI_PROVIDER=both`. A remote response is accepted only if it keeps
+the locally computed status and passes the strict output schema and allowed
+operation/state checks; otherwise the local plan is retained.
 
 ### Install and Run
 
@@ -83,7 +87,15 @@ $env:GROQ_API_KEY = "<rotated-key-from-your-secret-manager>"
 python code\main.py
 ```
 
-Use `gemini` for Gemini, or `both` to try Groq first and Gemini as a fallback.
+Use `gemini` for Gemini, or `both` to try Groq first and Gemini as a fallback:
+
+```powershell
+$env:AUDIT_AI_PROVIDER = "both"
+$env:GROQ_API_KEY = "<rotated-groq-key-from-your-secret-manager>"
+$env:GEMINI_API_KEY = "<rotated-gemini-key-from-your-secret-manager>"
+python code\main.py
+```
+
 The API keys are read only from environment variables and are never printed.
 Because provider review sends redacted request context and generated plans to
 an external service, use it only when your data-handling policy permits it.
